@@ -1,0 +1,157 @@
+[
+  {
+    "id": "general_creator",
+    "name": "General Creator / Safe Brand Standards",
+    "allowedTerms": [],
+    "prohibitedTerms": [
+      "cure all",
+      "guaranteed wealth",
+      "100% risk free",
+      "get rich quick",
+      "miracle cure",
+      "secret glitch"
+    ],
+    "requiredTerms": [],
+    "prohibitedClaimTypes": [
+      "medical_cure",
+      "financial_guarantee",
+      "absolute_outcome"
+    ],
+    "customRules": [
+      "Avoid absolute claims regarding health or monetary returns"
+    ],
+    "regexRules": [
+      {
+        "id": "r_guarantee",
+        "name": "Guaranteed Return Claim",
+        "pattern": "\\b(guaranteed?|promise(s|d)?)\\s+(profit|money|income|roi|return)",
+        "action": "BLOCK",
+        "reason": "Explicitly guarantees financial returns, which violates creator advertising standards.",
+        "suggestedAction": "Qualify statements to discuss potential or past observations rather than guarantees."
+      }
+    ]
+  },
+  {
+    "id": "health_wellness",
+    "name": "Health & Wellness Compliance",
+    "allowedTerms": [
+      "supports",
+      "maintains",
+      "may help",
+      "formulated with"
+    ],
+    "prohibitedTerms": [
+      "cures",
+      "treats",
+      "prevents cancer",
+      "eradicates disease",
+      "miracle remedy",
+      "fights disease"
+    ],
+    "requiredTerms": [
+      "consult your doctor",
+      "dietary supplement"
+    ],
+    "prohibitedClaimTypes": [
+      "disease_treatment",
+      "prescriptive_cure"
+    ],
+    "customRules": [
+      "Must include disclaimer if discussing health supplements"
+    ],
+    "regexRules": [
+      {
+        "id": "r_fda",
+        "name": "FDA Approval Claim",
+        "pattern": "fda\\s+(approved|cleared|certified)",
+        "action": "BLOCK",
+        "reason": "Claiming FDA approval on dietary supplements or content is prohibited.",
+        "suggestedAction": "State that product is produced in an inspected facility without claiming FDA product approval."
+      },
+      {
+        "id": "r_cure",
+        "name": "Medical Treatment Claim",
+        "pattern": "\\b(cure|treat|prevent|heal)(s|d|ing)?\\s+(cancer|diabetes|arthritis|disease)",
+        "action": "WARNING",
+        "reason": "Medical treatment claims require qualified substantiation.",
+        "suggestedAction": "Use permitted phrasing such as \"supports overall vitality\" or \"maintains healthy cellular function\"."
+      }
+    ]
+  },
+  {
+    "id": "education_tech",
+    "name": "Tech & Education Guidelines",
+    "allowedTerms": [],
+    "prohibitedTerms": [
+      "hack passwords",
+      "bypass security",
+      "free cracked software"
+    ],
+    "requiredTerms": [],
+    "prohibitedClaimTypes": [
+      "unauthorized_access",
+      "piracy"
+    ],
+    "customRules": [
+      "Educational context only"
+    ],
+    "regexRules": [
+      {
+        "id": "r_exploit",
+        "name": "Exploitation Instructions",
+        "pattern": "\\b(steal|crack|bypass|hack)\\s+(password|credential|database|account)",
+        "action": "BLOCK",
+        "reason": "Content appears to describe unauthorized access or illegal bypass mechanisms.",
+        "suggestedAction": "Emphasize defensive cybersecurity concepts rather than exploit methods."
+      }
+    ]
+  },
+  {
+    "id": "custom_1790453967245_unsq",
+    "name": "Test FDA & Medical Claims Profile",
+    "isCustom": true,
+    "allowedTerms": [],
+    "prohibitedTerms": [
+      "cure-all miracle",
+      "100% money back"
+    ],
+    "requiredTerms": [
+      "consult a doctor"
+    ],
+    "prohibitedClaimTypes": [],
+    "customRules": [],
+    "regexRules": [
+      {
+        "id": "r_fda_claim",
+        "name": "FDA Approved Claim",
+        "pattern": "fda\\s+approved",
+        "action": "BLOCK",
+        "reason": "Claiming FDA approval is strictly prohibited for supplements."
+      }
+    ]
+  },
+  {
+    "id": "custom_1790454832582_pxdt",
+    "name": "Test FDA & Medical Claims Profile",
+    "isCustom": true,
+    "allowedTerms": [],
+    "prohibitedTerms": [
+      "cure-all miracle",
+      "100% money back"
+    ],
+    "requiredTerms": [
+      "consult a doctor"
+    ],
+    "prohibitedClaimTypes": [],
+    "customRules": [],
+    "regexRules": [
+      {
+        "id": "r_fda_claim",
+        "name": "FDA Approved Claim",
+        "pattern": "fda\\s+approved",
+        "action": "BLOCK",
+        "reason": "Claiming FDA approval is strictly prohibited for supplements."
+      }
+    ]
+  }
+]

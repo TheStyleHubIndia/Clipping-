@@ -1,0 +1,7 @@
+{
+  "name": "AI Clipping Studio",
+  "description": "Professional AI-powered video clipping studio to transform long-form video into high-quality vertical 9:16 short-form clips with smart multi-modal reframing, complete thought boundaries, and compliance checking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

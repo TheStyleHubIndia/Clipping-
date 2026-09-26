@@ -1,0 +1,15 @@
+{
+  "id": "proj_1790454812362_oaw5m",
+  "title": "Test Security Project",
+  "createdAt": "2026-09-26T20:33:32.362Z",
+  "sourceType": "SAMPLE",
+  "sourceFilename": "test.mp4",
+  "sourcePath": "/app/applet/projects/proj_1790454812362_oaw5m/source/test.mp4",
+  "duration": 0,
+  "width": 1920,
+  "height": 1080,
+  "fps": 30,
+  "hasAudio": true,
+  "userPrompt": "",
+  "campaignProfileId": "general_creator"
+}
