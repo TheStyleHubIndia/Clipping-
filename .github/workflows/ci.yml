@@ -27,7 +27,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: TypeScript check
+      - name: Install FFmpeg\n        run: sudo apt-get update && sudo apt-get install -y ffmpeg\n\n      - name: Check FFmpeg dependencies\n        run: npm run check:ffmpeg\n\n      - name: TypeScript check
         run: npm run lint
 
       - name: Production build
