@@ -143,45 +143,83 @@ app.post('/api/projects/:id/render', (req, res) => {
 
 app.post('/api/rankstudio/render', upload.array('clips', 30), async (req, res) => {
   const files = (req.files || []) as Express.Multer.File[];
+  const cleanup = () => files.forEach(f => { try { fs.unlinkSync(f.path); } catch {} });
   try {
     if (!files.length) return res.status(400).json({ error: 'Add at least one video clip.' });
     const ranks = JSON.parse(String(req.body.ranks || '[]'));
     if (!Array.isArray(ranks) || ranks.length !== files.length) return res.status(400).json({ error: 'Rank metadata must match clip count.' });
 
-    const outDir = path.resolve(process.cwd(), 'exports');
-    fs.mkdirSync(outDir, { recursive: true });
-    const filename = `rankstudio_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.mp4`;
-    const output = path.join(outDir, filename);
-    const args: string[] = ['-y'];
-    files.forEach(f => args.push('-i', f.path));
+    const title = String(req.body.title || 'TOP 5').trim().slice(0, 120);
+    const hook = String(req.body.hook || '').trim().slice(0, 180);
+    const preset = String(req.body.preset || 'BOLD').toUpperCase();
+    const captions = String(req.body.captions || 'true') === 'true';
+    const clips: any[] = [];
 
-    const filters: string[] = [];
-    files.forEach((_, i) => {
-      filters.push(
-        `[${i}:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,format=yuv420p[v${i}]`,
-        `[${i}:a]aresample=48000,aformat=sample_rates=48000:channel_layouts=stereo[a${i}]`
-      );
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i];
+      const probe = await new Promise<any>((resolve) => {
+        const p = spawn('ffprobe', ['-v','error','-show_entries','format=duration','-of','json',f.path], { stdio:['ignore','pipe','pipe'] });
+        let out=''; let err='';
+        p.stdout.on('data', d => out += d.toString());
+        p.stderr.on('data', d => err += d.toString());
+        p.on('error', e => resolve({error:e.message}));
+        p.on('close', code => {
+          if (code !== 0) return resolve({error:err || 'ffprobe failed'});
+          try { resolve(JSON.parse(out)); } catch { resolve({error:'Invalid ffprobe response'}); }
+        });
+      });
+      if (probe.error) throw new Error(`Probe failed for ${f.originalname}: ${probe.error}`);
+      const duration = Number(probe.format?.duration || 0);
+      if (!(duration > 0)) throw new Error(`Invalid duration for ${f.originalname}`);
+
+      let words:any[] = [];
+      if (captions) {
+        const wav = path.join(uploadDir, `audio_${Date.now()}_${i}_${Math.random().toString(36).slice(2,6)}.wav`);
+        const audio = await new Promise<any>((resolve) => {
+          const p = spawn('ffmpeg', ['-y','-i',f.path,'-vn','-ac','1','-ar','16000',wav], { stdio:['ignore','ignore','pipe'] });
+          let err=''; p.stderr.on('data',d=>err+=d.toString());
+          p.on('error',e=>resolve({error:e.message}));
+          p.on('close',code=>resolve(code===0?{ok:true}:{error:err.slice(-4000)||'audio extraction failed'}));
+        });
+        if (audio.ok) {
+          const tr = await new Promise<any>((resolve) => {
+            const p = spawn('python3', [path.resolve(process.cwd(),'pipeline/transcriber.py'), wav, '', 'tiny'], { env:{...process.env,PYTHONUNBUFFERED:'1'}, stdio:['ignore','pipe','pipe'] });
+            let out=''; let err='';
+            p.stdout.on('data',d=>out+=d.toString()); p.stderr.on('data',d=>err+=d.toString());
+            p.on('error',e=>resolve({error:e.message}));
+            p.on('close',code=>{
+              try {
+                const lines=out.trim().split('\n');
+                const line=[...lines].reverse().find(x=>x.trim().startsWith('{'));
+                const parsed=line?JSON.parse(line):null;
+                resolve(parsed?.data ? parsed : (parsed?.error ? parsed : {error:err||'transcription failed'}));
+              } catch { resolve({error:err||'transcription failed'}); }
+            });
+          });
+          if (tr.data?.segments) words = tr.data.segments.flatMap((x:any)=>x.words||[]);
+        }
+        try { fs.unlinkSync(wav); } catch {}
+      }
+      clips.push({path:f.path,duration,rank:Number(ranks[i]) || i+1,words});
+    }
+
+    const outDir = path.resolve(process.cwd(),'exports');
+    fs.mkdirSync(outDir,{recursive:true});
+    const filename = `rankstudio_${Date.now()}_${Math.random().toString(36).slice(2,8)}.mp4`;
+    const output = path.join(outDir,filename);
+    const cfg = JSON.stringify({clips,output,title,hook,preset,captions});
+    const rendered = await new Promise<any>((resolve) => {
+      const p=spawn('python3',[path.resolve(process.cwd(),'pipeline/rankstudio_renderer.py'),cfg],{env:{...process.env,PYTHONUNBUFFERED:'1'},stdio:['ignore','pipe','pipe']});
+      let out=''; let err=''; p.stdout.on('data',d=>out+=d.toString()); p.stderr.on('data',d=>err+=d.toString());
+      p.on('error',e=>resolve({error:e.message}));
+      p.on('close',code=>{ try { const lines=out.trim().split('\n'); const line=[...lines].reverse().find(x=>x.trim().startsWith('{')); resolve(line?JSON.parse(line):{error:err||`renderer exited ${code}`}); } catch { resolve({error:err||'renderer failed'}); } });
     });
-    const concatInputs = files.map((_, i) => `[v${i}][a${i}]`).join('');
-    filters.push(`${concatInputs}concat=n=${files.length}:v=1:a=1[v][a]`);
-
-    await new Promise<void>((resolve, reject) => {
-      const proc = spawn('ffmpeg', [...args, '-filter_complex', filters.join(';'), '-map', '[v]', '-map', '[a]', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', '-c:a', 'aac', '-b:a', '160k', '-movflags', '+faststart', '-metadata', `title=${String(req.body.title || 'Rank Studio').slice(0,120)}`, output], { stdio: ['ignore', 'ignore', 'pipe'] });
-      let stderr = '';
-      proc.stderr.on('data', d => { stderr += d.toString(); if (stderr.length > 12000) stderr = stderr.slice(-12000); });
-      proc.on('error', reject);
-      proc.on('close', code => code === 0 ? resolve() : reject(new Error(stderr || `FFmpeg exited with code ${code}`)));
-    });
-
-    const stat = fs.statSync(output);
-    res.json({ success: true, filename, url: `/exports/${filename}`, bytes: stat.size, width: 1080, height: 1920, fps: 30, container: 'MP4', videoCodec: 'H.264', audioCodec: 'AAC', ranks });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message || 'Rank Studio render failed' });
-  } finally {
-    files.forEach(f => { try { fs.unlinkSync(f.path); } catch {} });
-  }
+    if (!rendered.success) throw new Error(rendered.error || 'Rank Studio render failed');
+    res.json({success:true,filename,url:`/exports/${filename}`,...rendered,ranks,preset,captions});
+  } catch (err:any) {
+    res.status(500).json({error:err.message||'Rank Studio render failed'});
+  } finally { cleanup(); }
 });
-
 app.get('/api/projects/:id/source', (req, res) => {
   const project = JobManager.getProject(req.params.id);
   if (!project || !fs.existsSync(project.metadata.sourcePath)) return res.status(404).json({ error: 'Video source file not found' });
