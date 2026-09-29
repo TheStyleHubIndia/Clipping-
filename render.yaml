@@ -3,7 +3,7 @@ services:
     name: clipping-rank-studio
     runtime: node
     plan: free
-    buildCommand: npm ci && npm run build
+    buildCommand: sudo apt-get update && sudo apt-get install -y ffmpeg && npm ci && npm run check:ffmpeg && npm run build
     startCommand: npm start
     healthCheckPath: /
     envVars:
