@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
 type Clip = { id:string; name:string; url:string; rank:number; file:File };
 const PRESETS=['BOLD','CLEAN','MINIMAL','PODCAST','KARAOKE'] as const;
@@ -16,7 +16,6 @@ export default function RankReelStudio(){
   const inputRef=useRef<HTMLInputElement>(null);
   const ordered=useMemo(()=>clips,[clips]);
 
-  useEffect(()=>()=>clips.forEach(c=>URL.revokeObjectURL(c.url)),[clips]);
 
   function addFiles(files:FileList|null){
     if(!files)return;
