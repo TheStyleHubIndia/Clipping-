@@ -9,7 +9,6 @@ permissions:
 
 jobs:
   lockfile:
-    if: hashFiles('package-lock.json') == ''
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,8 +19,12 @@ jobs:
         run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
       - name: Commit lockfile
         run: |
+          if [ ! -f package-lock.json ]; then
+            echo "package-lock.json was not generated"
+            exit 1
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add package-lock.json
-          git commit -m "Generate npm lockfile"
+          git commit -m "Generate npm lockfile" || exit 0
           git push
