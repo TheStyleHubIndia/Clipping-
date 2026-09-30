@@ -68,7 +68,7 @@ def render(cfg):
             ass=os.path.join(td,"script.ass")
             make_script_ass(ass,script,title,hook,preset,duration)
             ep=ass.replace("\\\\","/").replace(":","\\\\:")
-            cmd=["ffmpeg","-y","-f","lavfi","-i",f"color=c=black:s=1080x1920:r=30:d={duration}","-f","lavfi","-i",f"anullsrc=r=48000:cl=stereo","-t",str(duration),"-vf",f"subtitles='{ep}'","-c:v","libx264","-preset","veryfast","-crf","20","-pix_fmt","yuv420p","-c:a","aac","-b:a","160k","-ar","48000","-shortest","-movflags","+faststart","-metadata",f"title={title or 'Rank Studio Script'}",output]
+            cmd=["ffmpeg","-y","-threads","1","-f","lavfi","-i",f"color=c=black:s=540x960:r=30:d={duration}","-f","lavfi","-i",f"anullsrc=r=48000:cl=stereo","-t",str(duration),"-vf",f"subtitles='{ep}',scale=1080:1920:flags=fast_bilinear","-c:v","libx264","-preset","ultrafast","-crf","28","-pix_fmt","yuv420p","-c:a","aac","-b:a","128k","-ar","48000","-shortest","-movflags","+faststart","-metadata",f"title={title or 'Rank Studio Script'}",output]
             run(cmd)
         probe=json.loads(run(["ffprobe","-v","error","-show_entries","format=duration,size:stream=codec_name,width,height,r_frame_rate","-of","json",output]))
         streams=probe.get("streams",[]); v=next((x for x in streams if x.get("width")),None); a=next((x for x in streams if x.get("codec_name")=="aac"),None)
