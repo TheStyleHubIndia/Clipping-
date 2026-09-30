@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
-    "check:ffmpeg": "node scripts/check-ffmpeg.mjs"
+    "check:ffmpeg": "node scripts/check-ffmpeg.mjs",
+    "prebuild": "python3 -m pip install --user --no-cache-dir -r requirements.txt"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
