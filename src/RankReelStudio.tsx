@@ -7,6 +7,7 @@ export default function RankReelStudio(){
   const [clips,setClips]=useState<Clip[]>([]);
   const [title,setTitle]=useState('TOP 5');
   const [hook,setHook]=useState('');
+  const [script,setScript]=useState('');
   const [preset,setPreset]=useState<(typeof PRESETS)[number]>('BOLD');
   const [captions,setCaptions]=useState(true);
   const [rendering,setRendering]=useState(false);
@@ -45,7 +46,7 @@ export default function RankReelStudio(){
       const form=new FormData();
       clips.forEach(c=>form.append('clips',c.file,c.file.name));
       form.append('ranks',JSON.stringify(clips.map(c=>c.rank)));
-      form.append('title',title);form.append('hook',hook);form.append('preset',preset);form.append('captions',String(captions));
+      form.append('title',title);form.append('hook',hook);form.append('script',script);form.append('preset',preset);form.append('captions',String(captions));
       const res=await fetch('/api/rankstudio/render',{method:'POST',body:form});
       const data=await res.json();if(!res.ok)throw new Error(data.error||'Render failed');
       setOutput(data.url);
@@ -74,6 +75,7 @@ export default function RankReelStudio(){
         <h2 style={{margin:'0 0 12px'}}>Project</h2>
         <label>Title<input value={title} onChange={e=>setTitle(e.target.value)} style={{display:'block',width:'100%',margin:'6px 0 12px',boxSizing:'border-box'}}/></label>
         <label>Hook<input value={hook} onChange={e=>setHook(e.target.value)} placeholder="Optional opening hook" style={{display:'block',width:'100%',margin:'6px 0 12px',boxSizing:'border-box'}}/></label>
+        <label>Script<textarea value={script} onChange={e=>setScript(e.target.value)} placeholder="Paste your full video script here..." rows={9} style={{display:'block',width:'100%',margin:'6px 0 12px',boxSizing:'border-box',resize:'vertical'}}/></label>
         <label>Caption preset<select value={preset} onChange={e=>setPreset(e.target.value as typeof preset)} style={{display:'block',width:'100%',margin:'6px 0 12px'}}>{PRESETS.map(p=><option key={p}>{p}</option>)}</select></label>
         <label style={{display:'flex',gap:8,alignItems:'center'}}><input type="checkbox" checked={captions} onChange={e=>setCaptions(e.target.checked)}/> Word-timed captions</label>
         <button onClick={shuffle} disabled={clips.length<2} style={{width:'100%',marginTop:12}}>🔀 Shuffle order</button>
