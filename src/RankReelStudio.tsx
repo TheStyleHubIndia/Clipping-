@@ -41,7 +41,7 @@ export default function RankReelStudio(){
     setDragIndex(null);
   }
   async function render(){
-    if(!clips.length||rendering)return;
+    if((!clips.length&&!script.trim())||rendering)return;
     setRendering(true);setError('');setOutput(null);
     try{
       const form=new FormData();
@@ -61,7 +61,7 @@ export default function RankReelStudio(){
       <input ref={inputRef} hidden type="file" accept="video/*" multiple onChange={e=>addFiles(e.target.files)}/>
     </header>
 
-    <style>{`@media (max-width: 760px){.rank-layout{grid-template-columns:1fr!important}.rank-settings{position:static!important}.rank-preview{grid-template-columns:1fr!important}.rank-export{display:none!important}}`}</style>\n    <section className="rank-layout" style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) 330px',gap:16,marginTop:16}}>
+    <style>{`@media (max-width: 760px){.rank-layout{grid-template-columns:1fr!important}.rank-settings{position:static!important}.rank-preview{grid-template-columns:1fr!important} .rank-export{display:block!important}}`}</style>\n    <section className="rank-layout" style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) 330px',gap:16,marginTop:16}}>
       <div style={{display:'grid',gap:10}}>
         {ordered.length===0&&<div style={{border:'1px dashed #555',borderRadius:16,padding:44,textAlign:'center'}}>Add MP4, MOV or WebM clips.<br/>Drag to reorder or use ↑ ↓.</div>}
         {ordered.map((clip,i)=><article key={clip.id} draggable onDragStart={()=>setDragIndex(i)} onDragOver={e=>e.preventDefault()} onDrop={()=>dropAt(i)}
@@ -80,8 +80,8 @@ export default function RankReelStudio(){
         <label>Caption preset<select value={preset} onChange={e=>setPreset(e.target.value as typeof preset)} style={{display:'block',width:'100%',margin:'6px 0 12px'}}>{PRESETS.map(p=><option key={p}>{p}</option>)}</select></label>
         <label style={{display:'flex',gap:8,alignItems:'center'}}><input type="checkbox" checked={captions} onChange={e=>setCaptions(e.target.checked)}/> Word-timed captions</label>
         <button onClick={shuffle} disabled={clips.length<2} style={{width:'100%',marginTop:12}}>🔀 Shuffle order</button>
-        <button onClick={render} disabled={!clips.length||rendering} style={{width:'100%',marginTop:8,padding:12,fontWeight:700}}>{rendering?'⏳ Rendering…':'🎬 Export 9:16 MP4'}</button>
-        <div style={{marginTop:12,fontSize:12,opacity:.65}}>1080×1920 · 30fps · H.264 + AAC · local FFmpeg</div></>}
+        <button onClick={render} disabled={(!clips.length&&!script.trim())||rendering} style={{width:'100%',marginTop:8,padding:12,fontWeight:700}}>{rendering?'⏳ Generating…':(clips.length?'🎬 Export 9:16 MP4':'✨ Generate from Script')}</button>
+        <div style={{marginTop:12,fontSize:12,opacity:.65}}>1080×1920 · 30fps · H.264 + AAC · local FFmpeg · Script supported</div></>}
         {error&&<div style={{marginTop:10,color:'#fb7185',fontSize:12,whiteSpace:'pre-wrap'}}>{error}</div>}
       </aside>
     </section>
