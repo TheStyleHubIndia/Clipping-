@@ -49,7 +49,11 @@ export default function RankReelStudio(){
       form.append('ranks',JSON.stringify(clips.map(c=>c.rank)));
       form.append('title',title);form.append('hook',hook);form.append('script',script);form.append('preset',preset);form.append('captions',String(captions));
       const res=await fetch('/api/rankstudio/render',{method:'POST',body:form});
-      const data=await res.json();if(!res.ok)throw new Error(data.error||'Render failed');
+      const raw=await res.text();
+      let data:any=null;
+      try{data=raw?JSON.parse(raw):null}catch{}
+      if(!res.ok) throw new Error(data?.error || raw || `Render failed (HTTP ${res.status})`);
+      if(!data?.url) throw new Error(data?.error || 'Render completed but no video URL was returned.');
       setOutput(data.url);
     }catch(e:any){setError(e?.message||'Render failed')}finally{setRendering(false)}
   }
