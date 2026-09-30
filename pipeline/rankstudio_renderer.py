@@ -40,10 +40,41 @@ def run(cmd):
     if p.returncode: raise RuntimeError(p.stderr[-10000:] or f"ffmpeg failed: {p.returncode}")
     return p.stdout
 
+def make_script_ass(path, script, title, hook, preset, duration):
+    sizes={"BOLD":56,"CLEAN":44,"MINIMAL":38,"PODCAST":48,"KARAOKE":58}
+    size=sizes.get(str(preset).upper(),56)
+    import re
+    clean=re.sub(r"\\s+"," ",str(script).strip())
+    chunks=[x.strip() for x in re.split(r"(?<=[.!?।])\\s+",clean) if x.strip()]
+    if not chunks: chunks=[clean]
+    chunks=chunks[:120]
+    total=max(3.0,float(duration)); step=total/max(1,len(chunks))
+    s=f"""[Script Info]\nScriptType: v4.00+\nPlayResX: 1080\nPlayResY: 1920\nScaledBorderAndShadow: yes\n\n[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\nStyle: Caption,DejaVu Sans,{size},&H00FFFFFF,&H0000D7FF,&H00000000,&H90000000,1,0,0,0,100,100,0,0,1,3,1,2,70,70,320,1\nStyle: Header,DejaVu Sans,52,&H00FFFFFF,&H0000D7FF,&H00000000,&H90000000,1,0,0,0,100,100,0,0,1,4,2,8,60,60,180,1\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"""
+    if title: s+=f"Dialogue: 2,0:00:00.00,{ass_time(min(5,total))},Header,,0,0,0,,{esc(title.upper())}\\n"
+    if hook: s+=f"Dialogue: 2,0:00:00.00,{ass_time(min(5,total))},Header,,0,0,0,,{{\\\\an8}}{esc(hook)}\\n"
+    for i,text in enumerate(chunks):
+        a=i*step; b=min(total,(i+1)*step)
+        if b<=a: continue
+        s+=f"Dialogue: 0,{ass_time(a)},{ass_time(b)},Caption,,0,0,0,,{esc(text.upper())}\\n"
+    with open(path,"w",encoding="utf-8") as f: f.write(s)
+
 def render(cfg):
-    clips=cfg["clips"]; output=cfg["output"]; title=str(cfg.get("title","")).strip()[:120]
+    clips=cfg.get("clips") or []; output=cfg["output"]; title=str(cfg.get("title","")).strip()[:120]
     hook=str(cfg.get("hook","")).strip()[:180]; script=str(cfg.get("script","")).strip()[:20000]; preset=str(cfg.get("preset","BOLD")).upper()
     captions=bool(cfg.get("captions",True)); os.makedirs(os.path.dirname(os.path.abspath(output)),exist_ok=True)
+    if not clips and script:
+        duration=max(8.0,min(180.0,8.0 + len(script.split())/2.5))
+        with tempfile.TemporaryDirectory(prefix="rankstudio_script_") as td:
+            ass=os.path.join(td,"script.ass")
+            make_script_ass(ass,script,title,hook,preset,duration)
+            ep=ass.replace("\\\\","/").replace(":","\\\\:")
+            cmd=["ffmpeg","-y","-f","lavfi","-i",f"color=c=black:s=1080x1920:r=30:d={duration}","-f","lavfi","-i",f"anullsrc=r=48000:cl=stereo","-t",str(duration),"-vf",f"subtitles='{ep}'","-c:v","libx264","-preset","veryfast","-crf","20","-pix_fmt","yuv420p","-c:a","aac","-b:a","160k","-ar","48000","-shortest","-movflags","+faststart","-metadata",f"title={title or 'Rank Studio Script'}",output]
+            run(cmd)
+        probe=json.loads(run(["ffprobe","-v","error","-show_entries","format=duration,size:stream=codec_name,width,height,r_frame_rate","-of","json",output]))
+        streams=probe.get("streams",[]); v=next((x for x in streams if x.get("width")),None); a=next((x for x in streams if x.get("codec_name")=="aac"),None)
+        if not v or v.get("codec_name")!="h264" or v.get("width")!=1080 or v.get("height")!=1920 or not a: raise RuntimeError("Script output validation failed")
+        return {"success":True,"output_path":output,"duration":float(probe.get("format",{}).get("duration",0)),"bytes":int(float(probe.get("format",{}).get("size",0))),"width":1080,"height":1920,"fps":30,"videoCodec":"H.264","audioCodec":"AAC","mode":"script"}
+    if not clips: raise RuntimeError("No clips or script supplied")
     with tempfile.TemporaryDirectory(prefix="rankstudio_") as td:
         args=["ffmpeg","-y"]; filters=[]
         for c in clips: args += ["-i",c["path"]]
