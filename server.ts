@@ -145,9 +145,10 @@ app.post('/api/rankstudio/render', upload.array('clips', 30), async (req, res) =
   const files = (req.files || []) as Express.Multer.File[];
   const cleanup = () => files.forEach(f => { try { fs.unlinkSync(f.path); } catch {} });
   try {
-    if (!files.length) return res.status(400).json({ error: 'Add at least one video clip.' });
+    const scriptOnly = !files.length && String(req.body.script || '').trim().length > 0;
+    if (!files.length && !scriptOnly) return res.status(400).json({ error: 'Add video clips or paste a script.' });
     const ranks = JSON.parse(String(req.body.ranks || '[]'));
-    if (!Array.isArray(ranks) || ranks.length !== files.length) return res.status(400).json({ error: 'Rank metadata must match clip count.' });
+    if (!scriptOnly && (!Array.isArray(ranks) || ranks.length !== files.length)) return res.status(400).json({ error: 'Rank metadata must match clip count.' });
 
     const title = String(req.body.title || 'TOP 5').trim().slice(0, 120);
     const hook = String(req.body.hook || '').trim().slice(0, 180);
