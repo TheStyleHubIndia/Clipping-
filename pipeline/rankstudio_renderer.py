@@ -42,7 +42,7 @@ def run(cmd):
 
 def render(cfg):
     clips=cfg["clips"]; output=cfg["output"]; title=str(cfg.get("title","")).strip()[:120]
-    hook=str(cfg.get("hook","")).strip()[:180]; preset=str(cfg.get("preset","BOLD")).upper()
+    hook=str(cfg.get("hook","")).strip()[:180]; script=str(cfg.get("script","")).strip()[:20000]; preset=str(cfg.get("preset","BOLD")).upper()
     captions=bool(cfg.get("captions",True)); os.makedirs(os.path.dirname(os.path.abspath(output)),exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="rankstudio_") as td:
         args=["ffmpeg","-y"]; filters=[]
