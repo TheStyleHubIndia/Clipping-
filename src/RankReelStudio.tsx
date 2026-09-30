@@ -13,6 +13,7 @@ export default function RankReelStudio(){
   const [rendering,setRendering]=useState(false);
   const [output,setOutput]=useState<string|null>(null);
   const [error,setError]=useState('');
+  const [settingsOpen,setSettingsOpen]=useState(true);
   const [dragIndex,setDragIndex]=useState<number|null>(null);
   const inputRef=useRef<HTMLInputElement>(null);
   const ordered=useMemo(()=>clips,[clips]);
@@ -60,7 +61,7 @@ export default function RankReelStudio(){
       <input ref={inputRef} hidden type="file" accept="video/*" multiple onChange={e=>addFiles(e.target.files)}/>
     </header>
 
-    <section style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) 330px',gap:16,marginTop:16}}>
+    <style>{`@media (max-width: 760px){.rank-layout{grid-template-columns:1fr!important}.rank-settings{position:static!important}.rank-preview{grid-template-columns:1fr!important}.rank-export{display:none!important}}`}</style>\n    <section className="rank-layout" style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) 330px',gap:16,marginTop:16}}>
       <div style={{display:'grid',gap:10}}>
         {ordered.length===0&&<div style={{border:'1px dashed #555',borderRadius:16,padding:44,textAlign:'center'}}>Add MP4, MOV or WebM clips.<br/>Drag to reorder or use ↑ ↓.</div>}
         {ordered.map((clip,i)=><article key={clip.id} draggable onDragStart={()=>setDragIndex(i)} onDragOver={e=>e.preventDefault()} onDrop={()=>dropAt(i)}
@@ -71,8 +72,8 @@ export default function RankReelStudio(){
         </article>)}
       </div>
 
-      <aside style={{background:'#15151b',padding:15,borderRadius:16,height:'fit-content',position:'sticky',top:12}}>
-        <h2 style={{margin:'0 0 12px'}}>Project</h2>
+      <aside className="rank-settings" style={{background:'#15151b',padding:15,borderRadius:16,height:'fit-content',position:'sticky',top:12}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8}}><h2 style={{margin:'0 0 12px'}}>Project / Settings</h2><button onClick={()=>setSettingsOpen(v=>!v)}>{settingsOpen?'Hide':'Show'}</button></div>{settingsOpen&&<>
         <label>Title<input value={title} onChange={e=>setTitle(e.target.value)} style={{display:'block',width:'100%',margin:'6px 0 12px',boxSizing:'border-box'}}/></label>
         <label>Hook<input value={hook} onChange={e=>setHook(e.target.value)} placeholder="Optional opening hook" style={{display:'block',width:'100%',margin:'6px 0 12px',boxSizing:'border-box'}}/></label>
         <label>Script<textarea value={script} onChange={e=>setScript(e.target.value)} placeholder="Paste your full video script here..." rows={9} style={{display:'block',width:'100%',margin:'6px 0 12px',boxSizing:'border-box',resize:'vertical'}}/></label>
@@ -80,12 +81,12 @@ export default function RankReelStudio(){
         <label style={{display:'flex',gap:8,alignItems:'center'}}><input type="checkbox" checked={captions} onChange={e=>setCaptions(e.target.checked)}/> Word-timed captions</label>
         <button onClick={shuffle} disabled={clips.length<2} style={{width:'100%',marginTop:12}}>🔀 Shuffle order</button>
         <button onClick={render} disabled={!clips.length||rendering} style={{width:'100%',marginTop:8,padding:12,fontWeight:700}}>{rendering?'⏳ Rendering…':'🎬 Export 9:16 MP4'}</button>
-        <div style={{marginTop:12,fontSize:12,opacity:.65}}>1080×1920 · 30fps · H.264 + AAC · local FFmpeg</div>
+        <div style={{marginTop:12,fontSize:12,opacity:.65}}>1080×1920 · 30fps · H.264 + AAC · local FFmpeg</div></>}
         {error&&<div style={{marginTop:10,color:'#fb7185',fontSize:12,whiteSpace:'pre-wrap'}}>{error}</div>}
       </aside>
     </section>
 
-    <section style={{marginTop:18,display:'grid',gridTemplateColumns:'1fr 360px',gap:16}}>
+    <section className="rank-preview" style={{marginTop:18,display:'grid',gridTemplateColumns:'1fr 360px',gap:16}}>
       <div style={{background:'#111116',borderRadius:16,padding:14}}>
         <h2 style={{margin:'0 0 10px'}}>9:16 Preview</h2>
         <div style={{maxWidth:360,margin:'auto',aspectRatio:'9/16',background:'#000',borderRadius:14,position:'relative',overflow:'hidden'}}>
@@ -96,7 +97,7 @@ export default function RankReelStudio(){
           {captions&&<div style={{position:'absolute',bottom:100,left:16,right:16,textAlign:'center',fontWeight:900,fontSize:23,textShadow:'0 3px 5px #000'}}>WORD-TIMED CAPTIONS</div>}
         </div>
       </div>
-      <div style={{background:'#15151b',borderRadius:16,padding:15}}>
+      <div className="rank-export" style={{background:'#15151b',borderRadius:16,padding:15}}>
         <h2 style={{marginTop:0}}>Export pipeline</h2>
         <ol style={{lineHeight:1.8,paddingLeft:22,opacity:.8}}>
           <li>Upload clips</li><li>Rank stays attached</li><li>Reorder / shuffle</li><li>9:16 crop + 30fps</li><li>Rank + title + hook burn-in</li><li>Local word-timed captions</li><li>H.264 + AAC MP4 validation</li>
