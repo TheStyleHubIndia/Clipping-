@@ -151,6 +151,7 @@ app.post('/api/rankstudio/render', upload.array('clips', 30), async (req, res) =
 
     const title = String(req.body.title || 'TOP 5').trim().slice(0, 120);
     const hook = String(req.body.hook || '').trim().slice(0, 180);
+    const script = String(req.body.script || '').trim().slice(0, 20000);
     const preset = String(req.body.preset || 'BOLD').toUpperCase();
     const captions = String(req.body.captions || 'true') === 'true';
     const clips: any[] = [];
@@ -207,7 +208,7 @@ app.post('/api/rankstudio/render', upload.array('clips', 30), async (req, res) =
     fs.mkdirSync(outDir,{recursive:true});
     const filename = `rankstudio_${Date.now()}_${Math.random().toString(36).slice(2,8)}.mp4`;
     const output = path.join(outDir,filename);
-    const cfg = JSON.stringify({clips,output,title,hook,preset,captions});
+    const cfg = JSON.stringify({clips,output,title,hook,script,preset,captions});
     const rendered = await new Promise<any>((resolve) => {
       const p=spawn('python3',[path.resolve(process.cwd(),'pipeline/rankstudio_renderer.py'),cfg],{env:{...process.env,PYTHONUNBUFFERED:'1'},stdio:['ignore','pipe','pipe']});
       let out=''; let err=''; p.stdout.on('data',d=>out+=d.toString()); p.stderr.on('data',d=>err+=d.toString());
